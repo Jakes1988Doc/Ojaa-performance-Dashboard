@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Online — Ojaa's Premium Meats</title>
+<meta name="description" content="Order biltong, dry wors, boerewors and steaks online from Ojaa's. Collection or delivery in Pietermaritzburg.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Oswald:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0906; --panel:#1a120c; --line:#38291a;
+    --gold:#c99a3c; --gold-br:#e8c069;
+    --red:#9c2023; --green:#2fae5c;
+    --cream:#f3e8d4; --muted:#b6a48c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',system-ui,sans-serif;line-height:1.6;padding-bottom:96px}
+  a{color:inherit}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:40;background:rgba(13,9,6,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;padding:12px 20px}
+  .brand{font-family:'Rye',serif;font-size:1.4rem}
+  .brand span{color:var(--gold-br)}
+  .nav-link{font-family:'Oswald',sans-serif;font-size:.85rem;letter-spacing:.5px;text-transform:uppercase;text-decoration:none;color:var(--muted)}
+
+  /* header */
+  header{padding:44px 0 28px;text-align:center;border-bottom:1px solid var(--line)}
+  header h1{font-family:'Rye',serif;font-size:clamp(1.9rem,5vw,2.8rem)}
+  header p{color:var(--muted);margin-top:8px;font-size:.95rem}
+  .closed-banner{background:var(--red);color:#fff;padding:12px;text-align:center;font-family:'Oswald',sans-serif;letter-spacing:.5px}
+
+  /* category tabs */
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:20px 0 4px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.8px;
+    font-size:.82rem;padding:9px 16px;border:1px solid var(--line);background:var(--panel);
+    color:var(--muted);cursor:pointer;white-space:nowrap;
+  }
+  .tab.active{border-color:var(--gold);color:var(--gold-br)}
+
+  /* products */
+  .cat-title{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1.4px;color:var(--gold-br);margin:32px 0 14px;display:flex;align-items:center;gap:14px}
+  .cat-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px}
+  .card.oos{opacity:.45}
+  .card .nm{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:1.05rem;font-weight:600;line-height:1.2}
+  .card .un{font-size:.8rem;color:var(--muted)}
+  .card .pr{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.25rem;color:var(--gold-br)}
+  .oos-tag{display:inline-block;background:var(--red);color:#fff;font-size:.7rem;padding:3px 8px;font-family:'Oswald',sans-serif;letter-spacing:.5px}
+  .low-tag{color:var(--red);font-size:.75rem;font-family:'Oswald',sans-serif}
+
+  .qty{display:flex;align-items:center;gap:0;margin-top:auto}
+  .qty button{
+    width:38px;height:38px;background:#241a12;border:1px solid var(--line);color:var(--cream);
+    font-size:1.2rem;cursor:pointer;line-height:1
+  }
+  .qty button:disabled{opacity:.3;cursor:not-allowed}
+  .qty .n{width:44px;height:38px;display:flex;align-items:center;justify-content:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:'Oswald',sans-serif;font-weight:600}
+  .add{
+    flex:1;margin-left:10px;height:38px;background:var(--gold);color:#1a1204;border:none;
+    font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.6px;font-size:.82rem;
+    font-weight:600;cursor:pointer
+  }
+  .add:disabled{background:#3a3129;color:#7a6d5e;cursor:not-allowed}
+
+  /* basket bar */
+  .basket-bar{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);
+    border-top:2px solid var(--gold);padding:12px 20px;display:none
+  }
+  .basket-bar.show{display:block}
+  .basket-bar .inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .bb-sum{font-family:'Oswald',sans-serif;font-size:.95rem}
+  .bb-sum .t{color:var(--gold-br);font-weight:700;font-size:1.15rem}
+  .btn{
+    font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.6px;font-weight:600;
+    padding:13px 24px;border:none;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;text-align:center
+  }
+  .btn-go{background:var(--green);color:#08210f}
+  .btn-ghost{background:transparent;border:1px solid var(--gold);color:var(--gold-br)}
+
+  /* drawer */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;display:none}
+  .overlay.show{display:block}
+  .drawer{
+    position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--bg);
+    border-left:1px solid var(--line);z-index:70;transform:translateX(100%);
+    transition:transform .25s ease;overflow-y:auto;padding:22px
+  }
+  .drawer.show{transform:translateX(0)}
+  .drawer h2{font-family:'Rye',serif;font-size:1.5rem;margin-bottom:4px}
+  .close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--muted);font-size:1.8rem;cursor:pointer;line-height:1}
+
+  .line{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .line .l-nm{flex:1;font-size:.92rem}
+  .line .l-nm small{display:block;color:var(--muted);font-size:.78rem}
+  .line .l-tot{font-family:'Oswald',sans-serif;font-weight:600;min-width:74px;text-align:right}
+  .rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:1.1rem;padding:0 4px}
+
+  .totals{margin-top:16px;font-size:.9rem}
+  .totals div{display:flex;justify-content:space-between;padding:4px 0;color:var(--muted)}
+  .totals .grand{color:var(--cream);font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:700;border-top:1px solid var(--line);margin-top:6px;padding-top:10px}
+
+  label{display:block;font-family:'Oswald',sans-serif;font-size:.78rem;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:14px 0 5px}
+  input,textarea,select{
+    width:100%;background:var(--panel);border:1px solid var(--line);color:var(--cream);
+    padding:11px 12px;font-family:'DM Sans',sans-serif;font-size:.95rem
+  }
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold)}
+  textarea{resize:vertical;min-height:70px}
+  .radio-row{display:flex;gap:10px;margin-top:6px}
+  .radio-row label{
+    flex:1;margin:0;padding:12px;border:1px solid var(--line);background:var(--panel);
+    text-align:center;cursor:pointer;color:var(--muted);font-size:.8rem
+  }
+  .radio-row label.sel{border-color:var(--gold);color:var(--gold-br)}
+  .radio-row input{display:none}
+
+  .err{background:#3a1416;border:1px solid var(--red);color:#ffb3b5;padding:11px;font-size:.87rem;margin-top:14px}
+  .warn{background:#3a2e14;border:1px solid var(--gold);color:var(--gold-br);padding:11px;font-size:.87rem;margin-top:14px}
+
+  .done{text-align:center;padding:20px 0}
+  .done .tick{font-size:3rem;color:var(--green)}
+  .done h3{font-family:'Rye',serif;font-size:1.5rem;margin:10px 0}
+  .bank{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);padding:16px;text-align:left;margin-top:18px;font-size:.9rem;line-height:1.9}
+  .bank .lbl{color:var(--muted);display:inline-block;min-width:130px}
+
+  .spinner{border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;width:30px;height:30px;animation:spin .8s linear infinite;margin:36px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:560px){
+    .basket-bar .inner{flex-direction:column;align-items:stretch;gap:10px}
+    .bb-sum{text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand">Ojaa<span>'</span>s</div>
+  <a class="nav-link" href="index.html">&larr; Home</a>
+</div></nav>
+
+<div id="closed" class="closed-banner" style="display:none">
+  We're not taking online orders right now — please check back shortly.
+</div>
+
+<header><div class="wrap">
+  <h1>Order Online</h1>
+  <p>Collection from Mkondeni, or delivery within 5km. Pay by EFT once you receive your invoice.</p>
+</div></header>
+
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div id="catalogue"><div class="spinner"></div></div>
+</div>
+
+<div class="basket-bar" id="bar"><div class="inner">
+  <div class="bb-sum"><span id="bbCount">0 items</span> &nbsp;·&nbsp; <span class="t" id="bbTotal">R0.00</span></div>
+  <button class="btn btn-go" onclick="openDrawer()">Review &amp; Checkout</button>
+</div></div>
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <button class="close" onclick="closeDrawer()">&times;</button>
+  <div id="drawerBody"></div>
+</aside>
+
+<script>
+const API = 'https://ojaa-meats-bot.onrender.com';
+
+let MENU = [], CATS = [], CART = {}, ACTIVE = null, SUBMITTING = false;
+
+const money = n => 'R' + Number(n).toFixed(2);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- load ----------
+async function load() {
+  try {
+    const r = await fetch(API + '/api/menu');
+    if (!r.ok) throw new Error('menu');
+    const d = await r.json();
+    MENU = d.items; CATS = d.categories;
+    if (!d.open) document.getElementById('closed').style.display = 'block';
+    renderTabs(); renderCatalogue();
+  } catch (e) {
+    document.getElementById('catalogue').innerHTML =
+      '<div class="err">We could not load the menu just now. Please refresh, or call us on +27 82 617 9993.</div>';
+  }
+}
+
+function renderTabs() {
+  const t = document.getElementById('tabs');
+  t.innerHTML = ['<button class="tab active" data-c="">All</button>']
+    .concat(CATS.map(c => `<button class="tab" data-c="${esc(c)}">${esc(c)}</button>`)).join('');
+  t.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+    t.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    ACTIVE = b.dataset.c || null;
+    renderCatalogue();
+  });
+}
+
+function renderCatalogue() {
+  const wrap = document.getElementById('catalogue');
+  const cats = ACTIVE ? [ACTIVE] : CATS;
+  let html = '';
+  for (const c of cats) {
+    const items = MENU.filter(m => m.category === c);
+    if (!items.length) continue;
+    html += `<div class="cat-title">${esc(c)}</div><div class="grid">`;
+    for (const m of items) {
+      const q = CART[m.id]?.qty || 0;
+      const cap = m.available;
+      const maxed = cap !== null && q >= cap;
+      html += `
+      <div class="card ${m.inStock ? '' : 'oos'}">
+        <div>
+          <div class="nm">${esc(m.name)}</div>
+          <div class="un">${esc(m.unit)}</div>
+        </div>
+        <div class="pr">${money(m.price)}</div>
+        ${!m.inStock ? '<span class="oos-tag">OUT OF STOCK</span>'
+          : (cap !== null && cap <= 3 ? `<span class="low-tag">Only ${cap} left</span>` : '')}
+        ${m.inStock ? `
+        <div class="qty">
+          <button onclick="bump('${esc(m.id)}',-1)" ${q < 1 ? 'disabled' : ''}>&minus;</button>
+          <div class="n">${q}</div>
+          <button onclick="bump('${esc(m.id)}',1)" ${maxed ? 'disabled' : ''}>+</button>
+          <button class="add" onclick="bump('${esc(m.id)}',1)" ${maxed ? 'disabled' : ''}>
+            ${q > 0 ? 'Added' : 'Add'}
+          </button>
+        </div>` : ''}
+      </div>`;
+    }
+    html += '</div>';
+  }
+  wrap.innerHTML = html || '<p style="color:var(--muted);padding:30px 0">Nothing here yet.</p>';
+}
+
+// ---------- cart ----------
+function bump(id, d) {
+  const m = MENU.find(x => String(x.id) === String(id));
+  if (!m || !m.inStock) return;
+  const cur = CART[id]?.qty || 0;
+  let next = cur + d;
+  if (next < 0) next = 0;
+  if (m.available !== null && next > m.available) next = m.available;
+  if (next > 50) next = 50;
+  if (next === 0) delete CART[id]; else CART[id] = { ...m, qty: next };
+  renderCatalogue(); renderBar();
+}
+
+function cartLines() { return Object.values(CART); }
+function cartTotal() { return cartLines().reduce((s, i) => s + i.price * i.qty, 0); }
+
+function renderBar() {
+  const lines = cartLines();
+  const n = lines.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('bar').classList.toggle('show', n > 0);
+  document.getElementById('bbCount').textContent = n + (n === 1 ? ' item' : ' items');
+  document.getElementById('bbTotal').textContent = money(cartTotal());
+}
+
+// ---------- drawer ----------
+function openDrawer() {
+  renderCheckout();
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('drawer').classList.add('show');
+}
+function closeDrawer() {
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('drawer').classList.remove('show');
+}
+
+function renderCheckout(errMsg) {
+  const lines = cartLines();
+  const total = cartTotal();
+  const vatExcl = total / 1.15, vat = total - vatExcl;
+
+  document.getElementById('drawerBody').innerHTML = `
+    <h2>Your Basket</h2>
+    <div id="lines">
+      ${lines.map(i => `
+        <div class="line">
+          <div class="l-nm">${esc(i.name)}<small>${esc(i.unit)} · ${money(i.price)} × ${i.qty}</small></div>
+          <div class="l-tot">${money(i.price * i.qty)}</div>
+          <button class="rm" onclick="bump('${esc(i.id)}',-999);renderCheckout()" title="Remove">&times;</button>
+        </div>`).join('')}
+    </div>
+    <div class="totals">
+      <div><span>Sub total (excl. VAT)</span><span>${money(vatExcl)}</span></div>
+      <div><span>VAT 15%</span><span>${money(vat)}</span></div>
+      <div class="grand"><span>Total</span><span>${money(total)}</span></div>
+    </div>
+
+    <label>Your name *</label>
+    <input id="f_name" autocomplete="name" placeholder="First and last name">
+
+    <label>Email address *</label>
+    <input id="f_email" type="email" autocomplete="email" placeholder="you@example.com">
+    <div style="color:var(--muted);font-size:.78rem;margin-top:4px">Your invoice is emailed here.</div>
+
+    <label>Mobile number *</label>
+    <input id="f_phone" type="tel" autocomplete="tel" placeholder="082 000 0000">
+
+    <label>Collection or delivery *</label>
+    <div class="radio-row" id="f_type">
+      <label class="sel" data-v="Collection - Workshop">Collection</label>
+      <label data-v="Delivery">Delivery (within 5km)</label>
+    </div>
+
+    <div id="addrWrap" style="display:none">
+      <label>Delivery address *</label>
+      <textarea id="f_address" placeholder="Street, suburb, Pietermaritzburg"></textarea>
+    </div>
+
+    <label>Notes (optional)</label>
+    <textarea id="f_notes" placeholder="Anything we should know?"></textarea>
+
+    ${errMsg ? `<div class="err">${esc(errMsg)}</div>` : ''}
+
+    <button class="btn btn-go" style="width:100%;margin-top:20px" id="placeBtn" onclick="placeOrder()">
+      Place Order · ${money(total)}
+    </button>
+    <p style="color:var(--muted);font-size:.78rem;margin-top:10px;text-align:center">
+      No payment now. We email your invoice with EFT details.
+    </p>`;
+
+  document.querySelectorAll('#f_type label').forEach(l => l.onclick = () => {
+    document.querySelectorAll('#f_type label').forEach(x => x.classList.remove('sel'));
+    l.classList.add('sel');
+    document.getElementById('addrWrap').style.display =
+      l.dataset.v === 'Delivery' ? 'block' : 'none';
+  });
+}
+
+// remove-all shortcut used by the × button
+const _bump = bump;
+bump = function (id, d) {
+  if (d === -999) { delete CART[id]; renderCatalogue(); renderBar(); return; }
+  _bump(id, d);
+};
+
+// ---------- submit ----------
+async function placeOrder() {
+  if (SUBMITTING) return;
+
+  const sel = document.querySelector('#f_type label.sel');
+  const payload = {
+    name:  document.getElementById('f_name').value.trim(),
+    email: document.getElementById('f_email').value.trim(),
+    phone: document.getElementById('f_phone').value.trim(),
+    deliveryType: sel ? sel.dataset.v : 'Collection - Workshop',
+    deliveryAddress: (document.getElementById('f_address') || {}).value?.trim() || '',
+    notes: document.getElementById('f_notes').value.trim(),
+    items: cartLines().map(i => ({ id: i.id, qty: i.qty })),
+  };
+
+  if (!payload.name)  return renderCheckout('Please enter your name.');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email))
+    return renderCheckout('Please enter a valid email address.');
+  if (payload.phone.replace(/\D/g, '').length < 9)
+    return renderCheckout('Please enter a valid mobile number.');
+  if (payload.deliveryType === 'Delivery' && payload.deliveryAddress.length < 8)
+    return renderCheckout('Please enter your full delivery address.');
+
+  SUBMITTING = true;
+  const btn = document.getElementById('placeBtn');
+  btn.disabled = true; btn.textContent = 'Placing your order…';
+
+  try {
+    const r = await fetch(API + '/api/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    SUBMITTING = false;
+
+    if (!r.ok) {
+      renderCheckout(d.error || 'Something went wrong. Please try again.');
+      return;
+    }
+    showDone(d, payload);
+  } catch (e) {
+    SUBMITTING = false;
+    renderCheckout('We could not reach the server. Please check your connection, or call +27 82 617 9993.');
+  }
+}
+
+function showDone(d, payload) {
+  CART = {}; renderCatalogue(); renderBar();
+  const b = d.banking;
+  document.getElementById('drawerBody').innerHTML = `
+    <div class="done">
+      <div class="tick">&#10003;</div>
+      <h3>Order Received</h3>
+      <p style="color:var(--muted)">Order <strong style="color:var(--gold-br)">${esc(d.orderNum)}</strong></p>
+      <p style="color:var(--muted);font-size:.9rem;margin-top:8px">
+        Your invoice is on its way to <strong>${esc(payload.email)}</strong>.
+      </p>
+
+      ${d.problems && d.problems.length
+        ? `<div class="warn">${d.problems.map(esc).join('<br>')}</div>` : ''}
+
+      <div class="bank">
+        <div style="font-family:'Oswald',sans-serif;color:var(--gold-br);letter-spacing:1px;margin-bottom:8px">BANKING DETAILS</div>
+        <div><span class="lbl">Bank</span>${esc(b.bank)}</div>
+        <div><span class="lbl">Account name</span>${esc(b.accountName)}</div>
+        <div><span class="lbl">Account number</span>${esc(b.accountNumber)}</div>
+        <div><span class="lbl">Branch code</span>${esc(b.branchCode)}</div>
+        <div><span class="lbl">Reference</span><strong style="color:var(--gold-br)">${esc(b.reference)}</strong></div>
+        <div><span class="lbl">Amount</span><strong>${money(d.total)}</strong></div>
+        <div><span class="lbl">Send POP to</span>${esc(b.popEmail)}</div>
+      </div>
+
+      ${d.collection ? `<p style="margin-top:16px;font-size:.9rem">
+        <span style="color:var(--muted)">Collect from:</span><br>${esc(d.collection)}</p>` : ''}
+
+      ${d.invoiceUrl ? `<a class="btn btn-ghost" style="width:100%;margin-top:16px" href="${esc(d.invoiceUrl)}" target="_blank" rel="noopener">Download Invoice</a>` : ''}
+      <a class="btn btn-go" style="width:100%;margin-top:10px" href="${esc(d.whatsappUrl)}" target="_blank" rel="noopener">Confirm on WhatsApp</a>
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="closeDrawer()">Done</button>
+    </div>`;
+}
+
+load();
+</script>
+</body>
+</html>
