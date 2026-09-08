@@ -1068,42 +1068,103 @@ const VARIANT_WORDS = { 'Lean':['lean'], 'Fatty':['fat'] };
 let SHEET_ROWS = [];
 let SHOP_OPEN = true;
 
+function normTokens(t){
+  return String(t||'').toLowerCase()
+    .replace(/&/g,' and ')
+    .replace(/[^a-z0-9]+/g,' ')
+    .split(' ')
+    .filter(w=>w && !['the','a','of','per','kg','g','pack','packs','x'].includes(w));
+}
+
+/* stem so "spicy"~"spice", "original"~"orig", "chilli"~"chili" */
+function stem(w){
+  w = w.replace(/^chill?i.*$/,'chil')
+       .replace(/^orig.*$/,'orig')
+       .replace(/^spic.*$/,'spic')
+       .replace(/^boere.*$/,'boere')
+       .replace(/^biltong.*$/,'biltong')
+       .replace(/^drie|^droe|^dry$/,'dry')
+       .replace(/^wors.*$/,'wors')
+       .replace(/^rasher.*$/,'rasher')
+       .replace(/^rib.*$/,'rib')
+       .replace(/^rump.*$/,'rump')
+       .replace(/^ribeye.*$/,'ribeye')
+       .replace(/^skilpad.*$/,'skilpad')
+       .replace(/^beef$/,'')
+       .replace(/^pork.*$/,'pork');
+  return w;
+}
+function scoreMatch(prodName, variant, rowName){
+  const a = normTokens(prodName + ' ' + (variant||'')).map(stem).filter(Boolean);
+  const b = normTokens(rowName).map(stem).filter(Boolean);
+  if(!a.length || !b.length) return 0;
+  let hit = 0;
+  for(const t of a) if(b.includes(t)) hit++;
+  // proportion of the catalogue name's words found in the sheet name
+  return hit / a.length;
+}
+
 function matchRow(words, extra){
-  const all = words.concat(extra||[]);
+  const all = (words||[]).concat(extra||[]);
   return SHEET_ROWS.filter(r=>{
     const n = String(r.name||'').toLowerCase();
-    return all.every(w=>n.includes(w));
+    return all.length ? all.every(w=>n.includes(w)) : false;
   });
+}
+
+/* Best sheet row for a product (+ optional variant), by keyword rule first,
+   then by fuzzy score. Returns null only if nothing plausible exists. */
+function bestRow(p, variant){
+  const words = SHEET_MATCH[p.id];
+  if(words){
+    const strict = matchRow(words, variant ? VARIANT_WORDS[variant] : null);
+    if(strict.length) return strict[0];
+  }
+  let best=null, bestScore=0;
+  for(const r of SHEET_ROWS){
+    let sc = scoreMatch(p.name, variant, r.name);
+    // a variant must not match a row belonging to the other variant
+    if(variant){
+      const rn = String(r.name||'').toLowerCase();
+      const other = Object.keys(VARIANT_WORDS).find(v=>v!==variant);
+      const otherWords = other ? VARIANT_WORDS[other] : [];
+      const mineWords = VARIANT_WORDS[variant] || [];
+      const hasMine  = mineWords.some(w=>rn.includes(w));
+      const hasOther = otherWords.some(w=>rn.includes(w));
+      if(hasOther && !hasMine) continue;
+      if(hasMine) sc += 0.35;
+    }
+    if(sc > bestScore){ bestScore = sc; best = r; }
+  }
+  return bestScore >= 0.55 ? best : null;
 }
 
 /* attach .sheet = {id, price, inStock, available} per product/variant */
 function bindSheetData(){
   const unmatched = [];
   for(const p of products){
-    const words = SHEET_MATCH[p.id];
-    if(!words){ unmatched.push(p.name); p.unavailable = true; continue; }
-
     if(p.variants && p.variants.length){
       p.sheetByVariant = {};
       for(const vn of p.variants){
-        const hits = matchRow(words, VARIANT_WORDS[vn]);
-        if(hits.length) p.sheetByVariant[vn] = hits[0];
+        const row = bestRow(p, vn);
+        if(row) p.sheetByVariant[vn] = row;
       }
       const any = Object.values(p.sheetByVariant)[0];
       if(!any){ unmatched.push(p.name); p.unavailable = true; continue; }
       p.price = any.price;
       p.unavailable = false;
     } else {
-      const hits = matchRow(words);
-      if(!hits.length){ unmatched.push(p.name); p.unavailable = true; continue; }
-      p.sheet = hits[0];
-      p.price = hits[0].price;
+      const row = bestRow(p, null);
+      if(!row){ unmatched.push(p.name); p.unavailable = true; continue; }
+      p.sheet = row;
+      p.price = row.price;
       p.unavailable = false;
     }
   }
   if(unmatched.length){
-    console.warn('OJAA: no Menu-sheet match for →', unmatched.join(' | '),
-      '\nEdit SHEET_MATCH in this file so these resolve.');
+    console.warn('OJAA: not on the Menu sheet →', unmatched.join(' | '));
+    console.info('OJAA: sheet product names are →',
+      SHEET_ROWS.map(r=>r.name).join(' | '));
   }
 }
 
@@ -1126,9 +1187,8 @@ async function loadLiveMenu(){
     SHEET_ROWS = data.items || [];
     SHOP_OPEN = data.open !== false;
     bindSheetData();
-    for(let i = products.length - 1; i >= 0; i--){
-      if(products[i].unavailable) products.splice(i,1);
-    }
+    // unmatched products stay visible but can't be ordered online
+
     if(!SHOP_OPEN) showClosedBanner();
     pruneCartAgainstStock();
   }catch(err){
@@ -1266,6 +1326,21 @@ function renderProducts(){
       card.dataset.qty=q;
       updateCardTotals();
     });
+
+    if(p.unavailable){
+      const btn=card.querySelector('.add-btn');
+      if(btn){
+        btn.disabled=true;
+        btn.textContent='CALL TO ORDER';
+        const note=document.createElement('p');
+        note.style.cssText='margin:8px 0 0;font-size:13px;color:var(--muted);text-align:center';
+        note.innerHTML='Not available online — call <a style="color:var(--gold2)" href="tel:+27826179993">082 617 9993</a>';
+        btn.parentNode.appendChild(note);
+      }
+      card.querySelectorAll('[data-step],.segmented button').forEach(b=>b.disabled=true);
+      productGrid.append(card);
+      return;
+    }
 
     card.querySelector('.add-btn').onclick=()=>{
       const variant=card.dataset.variant||'';
