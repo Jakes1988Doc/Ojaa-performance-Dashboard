@@ -1626,6 +1626,21 @@ document.addEventListener('keydown',e=>{
 
 loadLiveMenu().then(()=>{ renderProducts(); updateCartUI(); });
 
+/* Keep an open tab in step with the sheet: refresh prices and stock when the
+   customer comes back to the page, and quietly every few minutes. */
+let lastMenuLoad = Date.now();
+async function refreshMenu(){
+  if(document.querySelector('.panel.open')) return;   // don't reshuffle mid-checkout
+  await loadLiveMenu();
+  renderProducts();
+  updateCartUI();
+  lastMenuLoad = Date.now();
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && Date.now() - lastMenuLoad > 120000) refreshMenu();
+});
+setInterval(()=>{ if(!document.hidden) refreshMenu(); }, 180000);
+
 
 
 /* ---- confirmation + inline checkout errors ---- */
