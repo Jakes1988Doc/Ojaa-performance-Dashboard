@@ -1049,20 +1049,26 @@ const OJAA_API = 'https://ojaa-meats-bot.onrender.com';
    `must` = ALL these words must appear in the sheet product name
    (case-insensitive). Variants match on the variant word too.
    If a product can't be matched it is hidden from the shop. */
-const SHEET_MATCH = {
-  'boerewors-spicy'   : ['boerewors','spic'],
-  'boerewors-sp'      : ['boerewors','s'],
-  'biltong-original'  : ['biltong','orig'],
-  'biltong-sp'        : ['biltong','s&p'],
-  'drywors-original'  : ['wors','orig'],
-  'drywors-spicy'     : ['wors','chil'],
-  'rump'              : ['rump'],
-  'short-rib'         : ['rib'],
-  'pork-rasher'       : ['rasher'],
-  'skilpadjie'        : ['skilpadjie'],
-  'chilli-salt'       : ['salt'],
-  'pork-ribeye'       : ['ribeye'],
+/* Catalogue product  ->  Menu-sheet row ID (from /api/menu).
+   Variant products map each cut to its own sheet row.
+   Update these if you add or renumber rows in the Menu sheet. */
+const SHEET_ID_MAP = {
+  'boerewors-spicy'  : '1',                            // Boerewors (Spicy)
+  'boerewors-sp'     : '2',                            // Boerewors (Salt & P)
+  'biltong-original' : { 'Lean':'4', 'Fatty':'3' },    // Beef Biltong Orig
+  'biltong-sp'       : { 'Lean':'6', 'Fatty':'5' },    // Beef Biltong S&P
+  'drywors-original' : '7',                            // Dry Wors
+  'drywors-spicy'    : '8',                            // Dry Wors (Spicy)
+  'short-rib'        : '9',                            // Short Rib (Spicy)
+  'pork-rasher'      : '10',                           // Pork Rash (Hon&Pineapp)
+  'rump'             : '11',                           // Wet Aged Rump
+  'chilli-salt'      : '12',                           // Chilli Braai Salt
+  'skilpadjie'       : '13',                           // Skilpadjie
+  'pork-ribeye'      : '14',                           // Pork Ribeye Steak
 };
+
+/* Fallback keyword rules, only used for products not in SHEET_ID_MAP */
+const SHEET_MATCH = {};
 const VARIANT_WORDS = { 'Lean':['lean'], 'Fatty':['fat'] };
 
 let SHEET_ROWS = [];
@@ -1115,6 +1121,17 @@ function matchRow(words, extra){
 /* Best sheet row for a product (+ optional variant), by keyword rule first,
    then by fuzzy score. Returns null only if nothing plausible exists. */
 function bestRow(p, variant){
+  // 1. explicit ID mapping wins
+  const mapped = SHEET_ID_MAP[p.id];
+  if (mapped) {
+    const wantId = (typeof mapped === 'string') ? mapped : mapped[variant];
+    if (wantId) {
+      const row = SHEET_ROWS.find(r => String(r.id) === String(wantId));
+      if (row) return row;
+      console.warn(`OJAA: "${p.name}" is mapped to Menu row ID ${wantId}, which no longer exists.`);
+    }
+  }
+
   const words = SHEET_MATCH[p.id];
   if(words){
     const strict = matchRow(words, variant ? VARIANT_WORDS[variant] : null);
@@ -1140,6 +1157,29 @@ function bestRow(p, variant){
 }
 
 /* attach .sheet = {id, price, inStock, available} per product/variant */
+/* The Menu sheet is the source of truth for price AND unit, so changing a
+   unit in the sheet updates the shop without touching this file. */
+function tidyUnit(u){
+  const t = String(u||'').trim();
+  const m = t.match(/\(?\s*(\d+\s*(?:g|kg))\s*\)?/i);
+  if (/per\s*pack/i.test(t) && m) return m[1].replace(/\s+/g,'') + ' pack';
+  return t || '1kg';
+}
+function unitToKg(u){
+  const t = String(u||'').toLowerCase();
+  const g  = t.match(/(\d+(?:\.\d+)?)\s*g\b/);
+  const kg = t.match(/(\d+(?:\.\d+)?)\s*kg\b/);
+  if (kg) return parseFloat(kg[1]);
+  if (g)  return parseFloat(g[1]) / 1000;
+  return 1;
+}
+function applySheetRow(p, row){
+  p.price       = row.price;
+  p.unitLabel   = tidyUnit(row.unit);
+  p.unitWeightKg = unitToKg(row.unit);
+  p.unavailable = false;
+}
+
 function bindSheetData(){
   const unmatched = [];
   for(const p of products){
@@ -1151,14 +1191,12 @@ function bindSheetData(){
       }
       const any = Object.values(p.sheetByVariant)[0];
       if(!any){ unmatched.push(p.name); p.unavailable = true; continue; }
-      p.price = any.price;
-      p.unavailable = false;
+      applySheetRow(p, any);
     } else {
       const row = bestRow(p, null);
       if(!row){ unmatched.push(p.name); p.unavailable = true; continue; }
       p.sheet = row;
-      p.price = row.price;
-      p.unavailable = false;
+      applySheetRow(p, row);
     }
   }
   if(unmatched.length){
