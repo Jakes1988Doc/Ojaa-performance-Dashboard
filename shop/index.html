@@ -1231,7 +1231,7 @@ function renderProducts(){
               <div class="choice-label">Order quantity</div>
               <div class="qty-control qty-control-weight v48-quantity-controls" role="group" aria-label="${p.name} order quantity">
                 <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
-                <span data-total-weight aria-live="polite">${formatWeightKg(p.unitWeightKg)}</span>
+                <span data-total-weight aria-live="polite">1</span>
                 <button type="button" data-step="1" aria-label="Increase quantity">+</button>
               </div>
             </div>
@@ -1240,7 +1240,7 @@ function renderProducts(){
             <div class="choice-label">Order quantity</div>
             <div class="qty-control qty-control-weight v52-full-quantity-controls" role="group" aria-label="${p.name} order quantity">
               <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
-              <span data-total-weight aria-live="polite">${formatWeightKg(p.unitWeightKg)}</span>
+              <span data-total-weight aria-live="polite">1</span>
               <button type="button" data-step="1" aria-label="Increase quantity">+</button>
             </div>
           </div>`}
@@ -1258,7 +1258,7 @@ function renderProducts(){
 
     const updateCardTotals=()=>{
       const qty=Number(card.dataset.qty);
-      card.querySelector('[data-total-weight]').textContent=formatWeightKg(p.unitWeightKg*qty);
+      card.querySelector('[data-total-weight]').textContent=String(qty);
     };
 
     card.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
@@ -1275,7 +1275,7 @@ function renderProducts(){
       state.cart[k].qty += addQty;
       save();
 
-      announce(`${p.name}, ${addQty} ${addQty===1?'unit':'units'}, ${formatWeightKg(p.unitWeightKg*addQty)}, added to your order.`);
+      announce(`${p.name}, ${addQty} × ${p.unitLabel}, added to your order.`);
 
       const btn=card.querySelector('.add-btn');
       btn.textContent='✓ ADDED';
@@ -1333,7 +1333,7 @@ function renderCart(){
       <div>
         <h3>${p.name}</h3>
         <p>${v.variant?`${v.variant} · `:''}${money(p.price)} per ${p.unitLabel}</p>
-        <p class="cart-weight">${v.qty} × ${p.unitLabel} · <strong>${formatWeightKg(totalWeightKg)}</strong></p>
+        <p class="cart-weight">${v.qty} × ${p.unitLabel}</p>
         <div class="mini-controls" aria-label="${p.name} quantity">
           <button type="button" data-minus aria-label="Decrease ${p.name} quantity">−</button>
           <b aria-live="polite">${v.qty}</b>
